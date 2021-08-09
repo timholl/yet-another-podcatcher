@@ -1,0 +1,8 @@
+Package: yap
+Version: 0.0.1
+Section: unknown
+Priority: optional
+Architecture: all
+Depends: php-cli, php-xml, php-curl, ffmpeg, imagemagick
+Maintainer: Tim Hollmann <deb-packages.5f64588b@mail.tim-hollmann.de>
+Description: Yet Another Podcatcher
