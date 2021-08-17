@@ -2,8 +2,6 @@
 
 namespace App\Configuration;
 
-use RuntimeException;
-
 final class Subscription
 {
     /**
@@ -27,11 +25,19 @@ final class Subscription
      */
     private $externalTracklistMergeEnabled;
 
-    public function __construct(string $title, string $feedUrl, bool $externalTracklistMergeEnabled)
+    /**
+     * Only download the last recent {$recent} episodes, or null.
+     *
+     * @var int|null
+     */
+    private $recent;
+
+    public function __construct(string $title, string $feedUrl, bool $externalTracklistMergeEnabled, ?int $recent = null)
     {
         $this->title = $title;
         $this->feedUrl = $feedUrl;
         $this->externalTracklistMergeEnabled = $externalTracklistMergeEnabled;
+        $this->recent = $recent;
     }
 
     public function getTitle(): string
@@ -44,40 +50,13 @@ final class Subscription
         return $this->feedUrl;
     }
 
-    public function externalTracklistMergeEnabled(): bool
+    public function isExternalTracklistMergeEnabled(): bool
     {
         return $this->externalTracklistMergeEnabled;
     }
 
-    /**
-     * Decodes a provided JSON string
-     *
-     * @throws RuntimeException
-     */
-    public static function fromJson(string $jsonString): self
+    public function getRecent(): ?int
     {
-        // Decode
-        $jsonArray = json_decode($jsonString, true);
-        if (null === $jsonArray) {
-            throw new RuntimeException("Invalid JSON!");
-        }
-
-        if (!isset($jsonArray['title'])) {
-            throw new RuntimeException("Title missing.");
-        }
-
-        if (!isset($jsonArray['feedUrl'])) {
-            throw new RuntimeException("Feed URL missing.");
-        }
-
-        if (!isset($jsonArray['externalTracklistMergeEnabled'])) {
-            throw new RuntimeException("Missing attribute externalTracklistMergeEnabled");
-        }
-
-        return new self(
-            (string) $jsonArray['title'],
-            (string) $jsonArray['feedUrl'],
-            (boolean) $jsonArray['externalTracklistMergeEnabled']
-        );
+        return $this->recent;
     }
 }

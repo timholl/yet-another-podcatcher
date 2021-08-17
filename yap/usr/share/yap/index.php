@@ -22,6 +22,10 @@ Logger::info("Startup");
  */
 $config = ConfigurationLoader::loadConfiguration();
 
+if (null === $config) {
+    throw new RuntimeException("Error while loading configuration. Exiting.");
+}
+
 Logger::info("Loaded configuration");
 
 // Tell libxml to use internal errors
@@ -67,8 +71,16 @@ foreach($config->getSubscriptions() as $subscription) {
         count($feed->getItems())
     ));
 
+    /*
+     * Counts how many items of the current feed have already been processed.
+     */
+    $processedFeedItemsCounter = 0;
+
     // Process items
     foreach($feed->getItems() as $item) {
+
+        // Increment processed items counter
+        $processedFeedItemsCounter++;
 
         Logger::info(sprintf(
             "Processing item '%s'",
@@ -82,21 +94,28 @@ foreach($config->getSubscriptions() as $subscription) {
                 $item->getTitle()
             ));
 
-            continue; // Go to next item
+            // Continue with the next item of feed.
+            continue;
         }
 
         /*
-         * Use this to mark all episodes as downloaded without actually downloading them
+         * If we reach here, we know that the current item has not been downloaded yet.
+         *
+         * However, if the "recent" feature on the subscription is enabled, we only download the specified amount of items.
+         * If we have already processed ($processedFeedItemsCounter) more than this amount of the current feed, we mark
+         *  the remaining items as already downloaded and skip further processing.
          */
-        if (false) {
-            // Store as downloaded
+        if (null !== $subscription->getRecent() && $processedFeedItemsCounter > $subscription->getRecent()) {
+
+            // Store the current episode as downloaded
             AlreadyDownloadedHelper::storeAsDownloaded($config, $item->getEnclosureUrl());
 
             Logger::info(sprintf(
-                "Marked URL %s as downloaded.",
+                "Marked URL %s as downloaded (skipped due to not recent).",
                 $item->getEnclosureUrl()
             ));
 
+            // Continue with the next item of feed.
             continue;
         }
 
@@ -207,7 +226,7 @@ foreach($config->getSubscriptions() as $subscription) {
          * @var Chapter[] $chapters
          */
         $chapters = [];
-        if ($subscription->externalTracklistMergeEnabled()) {
+        if ($subscription->isExternalTracklistMergeEnabled()) {
             Logger::info("External tracklist merge is enabled for the current subscription.");
 
             // Check for chapter presence

@@ -1,0 +1,11 @@
+{
+  "libraryDirectory": "/tmp",
+  "subscriptions": [
+    {
+      "title": "My favourite podcast",
+      "feedUrl": "http://example.com/feed",
+      "externalTracklistMergeEnabled": false,
+      "recent": null
+    }
+  ]
+}
