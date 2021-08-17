@@ -214,7 +214,7 @@ foreach($config->getSubscriptions() as $subscription) {
             if (!hasChapters()) {
                 Logger::info("No chapters were found in the downloaded asset file. Going to retrieve external tracklist.");
 
-                // The string to search for. Currently, we just search for the episode title.
+                // The string to search for.
                 $queryString = $feed->getTitle() . " " . $item->getTitle();
 
                 // Let the 1001 Tracklist provider search
