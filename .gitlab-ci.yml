@@ -1,0 +1,4 @@
+include:
+  - project: 'tim.hollmann/internal-ci'
+    ref: master
+    file: '/debian-package.yml'
