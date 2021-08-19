@@ -117,6 +117,16 @@ final class Channel
     protected $copyright;
 
     /**
+     * Channel "completed" state
+     * Required:
+     * | General | iTunes |
+     * | no      | no     |
+     *
+     * @var bool|null
+     */
+    protected $completed;
+
+    /**
      * Episode items
      *
      * Required:
@@ -260,6 +270,11 @@ final class Channel
                 }
             }
 
+            // 'itunes:complete'
+            if (isset($iTunesAttributes->{"complete"})) {
+                $ret->completed = "Yes" === ((string) $iTunesAttributes->{"complete"});
+            }
+
             /*
              * We currently ignore the following optional iTunes tags:
              *
@@ -268,7 +283,6 @@ final class Channel
              *  - itunes:type
              *  - itunes:new-feed-url
              *  - itunes:block
-             *  - itunes:complete
              */
         }
 
@@ -336,6 +350,11 @@ final class Channel
     public function getCopyright(): ?string
     {
         return $this->copyright;
+    }
+
+    public function getCompleted(): ?bool
+    {
+        return $this->completed;
     }
 
     /**

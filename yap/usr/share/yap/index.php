@@ -72,6 +72,15 @@ foreach($config->getSubscriptions() as $subscription) {
     ));
 
     /*
+     * Print warning if podcast is marked as "completed" (no further episode will be added)
+     */
+    if (true === $feed->getCompleted()) {
+        Logger::info(sprintf(
+            'IMPORTANT: Feed is marked as "completed", so no further episodes will be published.'
+        ));
+    }
+
+    /*
      * Counts how many items of the current feed have already been processed.
      */
     $processedFeedItemsCounter = 0;
