@@ -72,6 +72,17 @@ foreach($config->getSubscriptions() as $subscription) {
     ));
 
     /*
+     * Print warning if the feed maintainer advertises a new feed URL, and this is not the currently used one.
+     */
+    if (null !== $feed->getNewFeedUrl() && $subscription->getFeedUrl() !== $feed->getNewFeedUrl()) {
+        Logger::info(sprintf(
+            'IMPORTANT: Unhandled feed URL change detected. "%s" -> "%s".',
+            $subscription->getFeedUrl(),
+            $feed->getNewFeedUrl()
+        ));
+    }
+
+    /*
      * Print warning if podcast is marked as "completed" (no further episode will be added)
      */
     if (true === $feed->getCompleted()) {

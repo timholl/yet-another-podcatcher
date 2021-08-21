@@ -118,6 +118,7 @@ final class Channel
 
     /**
      * Channel "completed" state
+     *
      * Required:
      * | General | iTunes |
      * | no      | no     |
@@ -125,6 +126,17 @@ final class Channel
      * @var bool|null
      */
     protected $completed;
+
+    /**
+     * Potential new feed URL advertised by the feed maintainer.
+     *
+     * Required:
+     * | General | iTunes |
+     * | no      | no     |
+     *
+     * @var string|null
+     */
+    protected $newFeedUrl;
 
     /**
      * Episode items
@@ -275,6 +287,11 @@ final class Channel
                 $ret->completed = "Yes" === ((string) $iTunesAttributes->{"complete"});
             }
 
+            // 'itunes:new-feed-url'
+            if (isset($iTunesAttributes->{"new-feed-url"})) {
+                $ret->newFeedUrl = (string) $iTunesAttributes->{"new-feed-url"};
+            }
+
             /*
              * We currently ignore the following optional iTunes tags:
              *
@@ -355,6 +372,11 @@ final class Channel
     public function getCompleted(): ?bool
     {
         return $this->completed;
+    }
+
+    public function getNewFeedUrl(): ?string
+    {
+        return $this->newFeedUrl;
     }
 
     /**
