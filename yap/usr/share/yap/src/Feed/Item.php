@@ -3,6 +3,7 @@
 namespace App\Feed;
 
 use DateTime;
+use DateTimeInterface;
 use SimpleXmlElement;
 use RuntimeException;
 
@@ -143,8 +144,20 @@ final class Item
 
         // 'pubDate'
         if (isset($xml->{"pubDate"})) {
-            // Parse from RFC 2822 format
-            $ret->publicationDate = DateTime::createFromFormat(DATE_RFC2822, (string) $xml->{"pubDate"});
+
+            // Get the provided publication date string
+            $pubDate = (string) $xml->{"pubDate"};
+
+            // Trim potential spaces (we are graceful)
+            $pubDate = trim($pubDate, ' ');
+
+            // Parse the date, expecting RFC 2822
+            $ret->publicationDate = DateTime::createFromFormat(DateTimeInterface::RFC2822, $pubDate);
+
+            // Throw an exception if the parsing failed
+            if (false === $ret->publicationDate) {
+                throw new RuntimeException(sprintf("Unable to parse string '%s' using RFC2822.", $pubDate));
+            }
         }
 
         // 'description'
