@@ -249,50 +249,44 @@ foreach($config->getSubscriptions() as $subscription) {
         if ($subscription->isExternalTracklistMergeEnabled()) {
             Logger::info("External tracklist merge is enabled for the current subscription.");
 
-            // Check for chapter presence
-            if (!hasChapters()) {
-                Logger::info("No chapters were found in the downloaded asset file. Going to retrieve external tracklist.");
+            // The string to search for.
+            $queryString = $feed->getTitle() . " " . $item->getTitle();
 
-                // The string to search for.
-                $queryString = $feed->getTitle() . " " . $item->getTitle();
+            Logger::info(sprintf(
+                "Going to retrieve external tracklist using query string '%s'.",
+                $queryString
+            ));
 
-                // Let the 1001 Tracklist provider search
-                // Decide a TracklistProviderInterface implementation:
+            /**
+             * Decide the TracklistProviderInterface implementation.
+             * We use 1001 Tracklists here as default.
+             *
+             * @var TracklistProviderInterface
+             */
+            $tracklistProvider = new ThousandAndOneTracklists();
 
-                /**
-                 * Decide the tracklist provider interface implementation.
-                 * We use 1001 Tracklists here as default.
-                 *
-                 * @var TracklistProviderInterface
-                 */
-                $tracklistProvider = new ThousandAndOneTracklists();
+            // Let the tracklist provider search
+            $tracklistUrl = $tracklistProvider->search($queryString);
 
-                // Let the tracklist provider search
-                $tracklistUrl = $tracklistProvider->search($queryString);
+            if (null !== $tracklistUrl) {
 
-                if (null !== $tracklistUrl) {
+                 Logger::info(sprintf(
+                    "Found tracklist with URL '%s'.",
+                    $tracklistUrl
+                ));
 
-                    Logger::info(sprintf(
-                        "Found tracklist with URL '%s'.",
-                        $tracklistUrl
-                    ));
-
-                    // Let the tracklist provider extract the chapters
-                    $chapters = $tracklistProvider->get($tracklistUrl);
-                } else {
-
-                    Logger::info(sprintf(
-                        "Could not find a tracklist for the provided query string '%s'. Going to fail hard.",
-                        $queryString
-                    ));
-
-                    throw new RuntimeException(
-                        "Error searching or extracting the tracklist. Maybe we got blacklisted?"
-                    );
-                }
-
+                // Let the tracklist provider extract the chapters
+                $chapters = $tracklistProvider->get($tracklistUrl);
             } else {
-                Logger::info("The downloaded file apparently has a sufficient amount of chapters. Skipping merge.");
+
+                Logger::info(sprintf(
+                    "Could not find a tracklist for the provided query string '%s'. Going to fail hard.",
+                    $queryString
+                ));
+
+                throw new RuntimeException(
+                    "Error searching or extracting the tracklist. Maybe we got blacklisted?"
+                );
             }
         }
 
@@ -387,33 +381,3 @@ foreach($config->getSubscriptions() as $subscription) {
 }
 
 Logger::info("Finished processing all subscriptions. Exiting.");
-
-/**
- * Returns true iff the file "./audio" has a reasonable amount of chapters (>= 2) set.
- */
-function hasChapters(): bool
-{
-    if (!file_exists("./audio")) {
-        return false;
-    }
-
-    $inspect_output = shell_exec("ffprobe -i ./audio -show_chapters -print_format json  2>/dev/null");
-    $json = @json_decode($inspect_output);
-
-    // Unable to parse JSON
-    if (null === $json) {
-        return false;
-    }
-
-    if (!isset($json->{"chapters"})) {
-        return false;
-    }
-
-    // Invalid JSON structure
-    if (!is_array($json->{"chapters"})) {
-        return false;
-    }
-
-    // Require at least two chapters
-    return count($json->{"chapters"}) >= 2;
-}
