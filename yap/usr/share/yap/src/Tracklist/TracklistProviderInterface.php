@@ -2,6 +2,8 @@
 
 namespace App\Tracklist;
 
+use RuntimeException;
+
 interface TracklistProviderInterface
 {
     /**
@@ -14,6 +16,7 @@ interface TracklistProviderInterface
     /**
      * Performs an extraction of a provided tracklist URL.
      *
+     * @throws RuntimeException
      * @return Chapter[]
      */
     public function get(string $tracklistUrl): array;

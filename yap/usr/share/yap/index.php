@@ -265,28 +265,51 @@ foreach($config->getSubscriptions() as $subscription) {
              */
             $tracklistProvider = new ThousandAndOneTracklists();
 
-            // Let the tracklist provider search
-            $tracklistUrl = $tracklistProvider->search($queryString);
+            try {
 
-            if (null !== $tracklistUrl) {
+                // Let the tracklist provider search
+                $tracklistUrl = $tracklistProvider->search($queryString);
 
-                 Logger::info(sprintf(
-                    "Found tracklist with URL '%s'.",
-                    $tracklistUrl
-                ));
+                if (null !== $tracklistUrl) {
+                    Logger::info(sprintf(
+                        "Found tracklist with URL '%s'.",
+                        $tracklistUrl
+                    ));
 
-                // Let the tracklist provider extract the chapters
-                $chapters = $tracklistProvider->get($tracklistUrl);
-            } else {
+                    // Let the tracklist provider extract the chapters
+                    $chapters = $tracklistProvider->get($tracklistUrl);
+                } else {
+                    Logger::info(sprintf(
+                        "Could not find a tracklist for the provided query string '%s'. Going to fail hard.",
+                        $queryString
+                    ));
+
+                    throw new RuntimeException(
+                        "Error searching or extracting the tracklist. Maybe we got blacklisted?"
+                    );
+                }
+
+            } catch(RuntimeException $exception) {
+
+                /*
+                 * If we reach here, one of the following happened:
+                 *  - Searching for the query string filed (connection error, IP blocked, no search result, ...)
+                 *  - Extracting the tracklist items failed (no items, no time, ...)
+                 */
 
                 Logger::info(sprintf(
-                    "Could not find a tracklist for the provided query string '%s'. Going to fail hard.",
-                    $queryString
+                    "Something went wrong during tracklist extraction: %s.",
+                    $exception->getMessage()
                 ));
 
-                throw new RuntimeException(
-                    "Error searching or extracting the tracklist. Maybe we got blacklisted?"
-                );
+                /*
+                 * Fail hard, only if tracklist merge is critical.
+                 */
+                if ($subscription->isExternalTracklistMergeCritical()) {
+                    throw new RuntimeException("Tracklist merge is configured critical and it failed.");
+                }
+
+                Logger::info("Tracklist merge is NOT configured critical, proceeding without tracklist.");
             }
         }
 

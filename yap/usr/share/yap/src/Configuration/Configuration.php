@@ -109,7 +109,21 @@ final class Configuration
                 $recent = (int) $subscription['recent'];
             }
 
-            $subscriptions[] = new Subscription($title, $feedUrl, $externalTracklist, $recent);
+            /*
+             * Optional attribute 'externalTracklistMergeCritical'
+             */
+            $externalTracklistMergeCritical = true;
+            if (isset($subscription['externalTracklistMergeCritical'])) {
+                $externalTracklistMergeCritical = (boolean) $subscription['externalTracklistMergeCritical'];
+            }
+
+            $subscriptions[] = new Subscription(
+                $title,
+                $feedUrl,
+                $externalTracklist,
+                $externalTracklistMergeCritical,
+                $recent
+            );
         }
 
         /*

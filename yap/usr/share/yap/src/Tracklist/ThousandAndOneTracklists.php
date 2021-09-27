@@ -76,12 +76,16 @@ final class ThousandAndOneTracklists implements TracklistProviderInterface
             return null;
         }
 
+        /*
+         * Their blocking currently seems to be based on IP-basis by counting the amount of different "gid" cookie values
+         *  assigned per IP.
+         * By keeping this cookie across all requests (self::COOKIE_FILE) this blocking is dribbled out.
+         */
         if (false !== strpos($result, "Your IP has been blocked")) {
             throw new RuntimeException("We got blocked.");
         }
 
-        // Convert "false|string" into "null|string"
-        return (false === $result) ? null : $result;
+        return $result;
     }
 
     /**
@@ -186,6 +190,11 @@ final class ThousandAndOneTracklists implements TracklistProviderInterface
             $tlItems->count()
         ));
 
+        /**
+         * @var $tracks (int, string)[]
+         */
+        $tracks = [];
+
         foreach($tlItems as $tlItem) {
 
             /*
@@ -195,7 +204,7 @@ final class ThousandAndOneTracklists implements TracklistProviderInterface
             if (1 !== $ret->count()) {
                 throw new RuntimeException("Could not extract tracklist item title");
             }
-            $title = trim($ret->item(0)->nodeValue);
+            $title = trim((string) $ret->item(0)->nodeValue);
             $title = mb_convert_encoding($title, "ASCII"); // Convert title to ASCII
 
             /*
@@ -205,7 +214,15 @@ final class ThousandAndOneTracklists implements TracklistProviderInterface
             if (1 !== $ret->count()) {
                 throw new RuntimeException("Could not extract tracklist item title");
             }
-            $time = $ret->item(0)->nodeValue;
+            $time = (string) $ret->item(0)->nodeValue;
+            if (!is_numeric($time)) {
+                throw new RuntimeException(sprintf(
+                    "Could not extract start time from string '%s' for tracklist item '%s'.",
+                    $time,
+                    $title
+                ));
+            }
+            $time = (int) $time;
 
             /*
              * Store
