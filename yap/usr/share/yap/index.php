@@ -371,7 +371,11 @@ foreach($config->getSubscriptions() as $subscription) {
 
         $destination = $destinationDirectory . "/" . $feed->getTitle() . " - " . $item->getTitle() . ".mka";
 
-        exec(sprintf("mv ./audio %s", escapeshellarg($destination)));
+        /*
+         * Move output audio file to destination.
+         * We use `cp` and `rm` instead of `mv` in order to prevent warnings concerning permissions when copying across filesystems.
+         */
+        exec(sprintf("cp --no-preserve=ownership ./audio %s && rm ./audio", escapeshellarg($destination)));
 
         Logger::info(sprintf(
             "Moved file to destination '%s' ...",
