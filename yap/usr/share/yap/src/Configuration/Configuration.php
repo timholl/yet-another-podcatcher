@@ -117,11 +117,20 @@ final class Configuration
                 $externalTracklistMergeCritical = (boolean) $subscription['externalTracklistMergeCritical'];
             }
 
+            /*
+             * Optional attribute 'enabled'
+             */
+            $enabled = true;
+            if (isset($subscription['enabled'])) {
+                $enabled = (boolean) $subscription['enabled'];
+            }
+
             $subscriptions[] = new Subscription(
                 $title,
                 $feedUrl,
                 $externalTracklist,
                 $externalTracklistMergeCritical,
+                $enabled,
                 $recent
             );
         }

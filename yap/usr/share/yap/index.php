@@ -48,6 +48,12 @@ foreach($config->getSubscriptions() as $subscription) {
         $subscription->getFeedUrl()
     ));
 
+    // Skip feed, if not enabled
+    if (!$subscription->isEnabled()) {
+        Logger::info("Feed is disabled. Skipping.");
+        continue;
+    }
+
     // Perform query
     $contents = file_get_contents($subscription->getFeedUrl());
     if (false === $contents) {
@@ -86,9 +92,7 @@ foreach($config->getSubscriptions() as $subscription) {
      * Print warning if podcast is marked as "completed" (no further episode will be added)
      */
     if (true === $feed->getCompleted()) {
-        Logger::info(sprintf(
-            'IMPORTANT: Feed is marked as "completed", so no further episodes will be published.'
-        ));
+        Logger::info('IMPORTANT: Feed is marked as "completed", so no further episodes will be published. It is advisable to remove the subscription entry in the configuration or add the "enabled: false" property to it in order to prevent unnecessary future requests.');
     }
 
     /*

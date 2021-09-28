@@ -41,6 +41,15 @@ final class Subscription
     private $externalTracklistMergeCritical;
 
     /**
+     * Optional: Is this feed enabled?
+     *
+     * Defaults to true.
+     *
+     * @var bool
+     */
+    private $enabled;
+
+    /**
      * Optional: Only download the last recent {$recent} episodes, or null.
      *
      * Defaults to null.
@@ -54,12 +63,14 @@ final class Subscription
         string $feedUrl,
         bool $externalTracklistMergeEnabled,
         bool $externalTracklistMergeCritical,
+        bool $enabled,
         ?int $recent = null
     ) {
         $this->title = $title;
         $this->feedUrl = $feedUrl;
         $this->externalTracklistMergeEnabled = $externalTracklistMergeEnabled;
         $this->externalTracklistMergeCritical = $externalTracklistMergeCritical;
+        $this->enabled = $enabled;
         $this->recent = $recent;
     }
 
@@ -81,6 +92,11 @@ final class Subscription
     public function isExternalTracklistMergeCritical(): bool
     {
         return $this->externalTracklistMergeCritical;
+    }
+
+    public function isEnabled(): bool
+    {
+        return $this->enabled;
     }
 
     public function getRecent(): ?int
