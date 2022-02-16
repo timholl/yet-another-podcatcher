@@ -22,7 +22,7 @@ final class FfMetadata
         $parts[] = ";FFMETADATA1";
 
         /*
-         * Title
+         * Title: Use item (episode) title
          */
         $parts[] = sprintf(
             "title=%s",
@@ -30,37 +30,12 @@ final class FfMetadata
         );
 
         /*
-         * Subtitle
+         * Subtitle: Use the channel (podcast) title
          */
         if (null !== $channel->getSubTitle()) {
             $parts[] = sprintf(
                 "subtitle=%s",
-                self::getAsOneLine($channel->getSubTitle(), true) // Make sure to have one line only.
-            );
-        }
-
-        /*
-         * Description / Comment
-         */
-        if (null !== $item->getDescription()) {
-            $parts[] = sprintf(
-                "description=%s",
-                self::getAsOneLine($item->getDescription(), false) // Make sure to have one line only.
-            );
-
-            $parts[] = sprintf(
-                "comment=%s", // Consider a synonym
-                self::getAsOneLine($item->getDescription(), false) // Make sure to have one line only.
-            );
-        }
-
-        /*
-         * Add the channel's description as album_description
-         */
-        if (null !== $channel->getDescription()) {
-            $parts[] = sprintf(
-                "album_description=%s",
-                self::getAsOneLine($channel->getDescription(), false)
+                self::getAsOneLine($channel->getTitle(), true) // Make sure to have one line only.
             );
         }
 
@@ -72,23 +47,36 @@ final class FfMetadata
                 "artist=%s",
                 self::getAsOneLine($channel->getAuthor(), true) // Make sure to have one line only.
             );
-            $parts[] = sprintf(
-                "album_artist=%s", // Consider a synonym
-                self::getAsOneLine($channel->getAuthor(), true) // Make sure to have one line only.
-            );
-            $parts[] = sprintf(
-                "author=%s", // Consider a synonym
-                self::getAsOneLine($channel->getAuthor(), true) // Make sure to have one line only.
-            );
         }
 
         /*
-         * Add album name / podcast name
+         * Add album name: Use combination of channel (podcast) title and item (episode) title in order to achieve
+         *  per-episode 'single'-albums.
          */
         if (null !== $channel->getTitle()) {
             $parts[] = sprintf(
                 "album=%s",
-                self::getAsOneLine($channel->getTitle(), true) // Make sure to have one line only.
+                self::getAsOneLine($channel->getTitle() . ' – ' . $item->getTitle(), true) // Make sure to have one line only.
+            );
+        }
+
+        /*
+         * Description / Comment
+         */
+        if (null !== $item->getDescription()) {
+            $parts[] = sprintf(
+                "description=%s",
+                self::getAsOneLine($item->getDescription(), false) // Make sure to have one line only.
+            );
+        }
+
+        /*
+         * Add the channel's description as channel_description
+         */
+        if (null !== $channel->getDescription()) {
+            $parts[] = sprintf(
+                "channel_description=%s",
+                self::getAsOneLine($channel->getDescription(), false)
             );
         }
 
@@ -111,7 +99,7 @@ final class FfMetadata
                 self::getAsOneLine($item->getLink(), true) // Make sure to have one line only.
             );
             $parts[] = sprintf(
-                "web=%s", // Consider a synonym
+                "web=%s", // Consider a synonym for "url"
                 self::getAsOneLine($item->getLink(), true) // Make sure to have one line only.
             );
         } else if (null !== $channel->getLink()) { // Alternative: Use channel link instead, if exists
@@ -120,7 +108,7 @@ final class FfMetadata
                 self::getAsOneLine($channel->getLink(), true) // Make sure to have one line only.
             );
             $parts[] = sprintf(
-                "web=%s", // Consider a synonym
+                "web=%s", // Consider a synonym for "url"
                 self::getAsOneLine($channel->getLink(), true) // Make sure to have one line only.
             );
         }
