@@ -9,6 +9,7 @@ use App\Tracklist\Chapter;
 use App\Tracklist\ThousandAndOneTracklists;
 use App\Tracklist\TracklistProviderInterface;
 use App\Util\FfMetadata;
+use App\Util\FilesystemEscaper;
 use App\Util\Logger;
 use App\Util\TempDir;
 use RuntimeException;
@@ -360,7 +361,12 @@ foreach($config->getSubscriptions() as $subscription) {
          */
 
         // Destination directory setup
-        $channelDirectory = $config->getLibraryDirectory() . "/" . $feed->getTitle();
+        $channelDirectory =
+            $config->getLibraryDirectory()
+            . DIRECTORY_SEPARATOR
+            . FilesystemEscaper::escapeNameForFilesystem($feed->getTitle())
+        ;
+
         if (!is_dir($channelDirectory)) {
             Logger::info(sprintf(
                 "Channel output directory '%s' does not exist yet, going to create.",
@@ -374,7 +380,12 @@ foreach($config->getSubscriptions() as $subscription) {
         assert(is_dir($channelDirectory));
 
         // Episode directory setup
-        $episodeDirectory = $channelDirectory . "/" . $item->getTitle();
+        $episodeDirectory =
+            $channelDirectory
+            . DIRECTORY_SEPARATOR
+            . FilesystemEscaper::escapeNameForFilesystem($item->getTitle())
+        ;
+
         if (!is_dir($episodeDirectory)) {
             Logger::info(sprintf(
                 "Episode output directory '%s' does not exist yet, going to create.",
@@ -394,8 +405,12 @@ foreach($config->getSubscriptions() as $subscription) {
         // Assure exists
         assert(file_exists("./audio"));
 
-        // Concatenate filename (TODO: Do this more carefully!)
-        $destination = $episodeDirectory . "/" . $feed->getTitle() . " - " . $item->getTitle() . ".mka";
+        // Concatenate filename
+        $destination =
+            $episodeDirectory
+            . DIRECTORY_SEPARATOR
+            . FilesystemEscaper::escapeNameForFilesystem($feed->getTitle() . " – " . $item->getTitle() . ".mka")
+        ;
 
         // We use `cp` and `rm` instead of `mv` in order to prevent warnings concerning permissions when copying across filesystem borders.
         exec(sprintf("cp --no-preserve=ownership ./audio %s && rm ./audio", escapeshellarg($destination)));
@@ -409,7 +424,7 @@ foreach($config->getSubscriptions() as $subscription) {
          * Move cover file to destination (if exists)
          */
         if (file_exists("./cover.png")) {
-            $destination = $episodeDirectory . "/" . "cover.png";
+            $destination = $episodeDirectory . DIRECTORY_SEPARATOR . "cover.png";
 
             // We use `cp` and `rm` instead of `mv` in order to prevent warnings concerning permissions when copying across filesystem borders.
             exec(sprintf("cp --no-preserve=ownership ./cover.png %s", escapeshellarg($destination)));
