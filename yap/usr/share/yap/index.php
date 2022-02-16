@@ -20,6 +20,15 @@ require __DIR__ . '/vendor/autoload.php';
 Logger::info("Startup");
 
 /*
+ * Set locale to UTF8 in order for PHP-internal methods to properly handle multibyte characters.
+ * Tries out various UTF-8 locales that may be present on the target system or fails otherwise, since correct
+ *  multibyte handling is crucial.
+ */
+if (false === setlocale(LC_CTYPE, ["UTF-8", "C.UTF-8", "en_US.UTF-8"])) {
+    die("Failed to set locale. This is required for correct multibyte handling.");
+}
+
+/*
  * Load the configuration
  */
 $config = ConfigurationLoader::loadConfiguration();
