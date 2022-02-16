@@ -295,10 +295,8 @@ final class Channel
             /*
              * We currently ignore the following optional iTunes tags:
              *
-             *  - itunes:subtitle
              *  - itunes:owner
              *  - itunes:type
-             *  - itunes:new-feed-url
              *  - itunes:block
              */
         }
