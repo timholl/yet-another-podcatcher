@@ -360,31 +360,65 @@ foreach($config->getSubscriptions() as $subscription) {
          */
 
         // Destination directory setup
-        $destinationDirectory = $config->getLibraryDirectory() . "/" . $feed->getTitle();
-        if (!is_dir($destinationDirectory)) {
+        $channelDirectory = $config->getLibraryDirectory() . "/" . $feed->getTitle();
+        if (!is_dir($channelDirectory)) {
             Logger::info(sprintf(
-                "Output directory '%s' does not exist yet, going to create.",
-                $destinationDirectory
+                "Channel output directory '%s' does not exist yet, going to create.",
+                $channelDirectory
             ));
 
-            if (false === mkdir($destinationDirectory)) {
-                throw new RuntimeException("Could not create output directory!");
+            if (false === mkdir($channelDirectory)) {
+                throw new RuntimeException("Could not create channel output directory!");
             }
         }
-        assert(is_dir($destinationDirectory));
+        assert(is_dir($channelDirectory));
 
-        $destination = $destinationDirectory . "/" . $feed->getTitle() . " - " . $item->getTitle() . ".mka";
+        // Episode directory setup
+        $episodeDirectory = $channelDirectory . "/" . $item->getTitle();
+        if (!is_dir($episodeDirectory)) {
+            Logger::info(sprintf(
+                "Episode output directory '%s' does not exist yet, going to create.",
+                $episodeDirectory
+            ));
+
+            if (false === mkdir($episodeDirectory)) {
+                throw new RuntimeException("Could not create episode output directory!");
+            }
+        }
+        assert(is_dir($episodeDirectory));
 
         /*
-         * Move output audio file to destination.
-         * We use `cp` and `rm` instead of `mv` in order to prevent warnings concerning permissions when copying across filesystems.
+         * Move audio file to destination.
          */
+
+        // Assure exists
+        assert(file_exists("./audio"));
+
+        // Concatenate filename (TODO: Do this more carefully!)
+        $destination = $episodeDirectory . "/" . $feed->getTitle() . " - " . $item->getTitle() . ".mka";
+
+        // We use `cp` and `rm` instead of `mv` in order to prevent warnings concerning permissions when copying across filesystem borders.
         exec(sprintf("cp --no-preserve=ownership ./audio %s && rm ./audio", escapeshellarg($destination)));
 
         Logger::info(sprintf(
-            "Moved file to destination '%s' ...",
+            "Moved asset file to destination '%s'.",
             $destination
         ));
+
+        /*
+         * Move cover file to destination (if exists)
+         */
+        if (file_exists("./cover.png")) {
+            $destination = $episodeDirectory . "/" . "cover.png";
+
+            // We use `cp` and `rm` instead of `mv` in order to prevent warnings concerning permissions when copying across filesystem borders.
+            exec(sprintf("cp --no-preserve=ownership ./cover.png %s", escapeshellarg($destination)));
+
+            Logger::info(sprintf(
+                "Moved cover art file to destination '%s'.",
+                $destination
+            ));
+        }
 
         // Clean up temporary directory
         TempDir::removeTempDir($workingDir);
