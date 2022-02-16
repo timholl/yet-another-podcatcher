@@ -2,7 +2,6 @@
 
 namespace App\Util;
 
-
 final class FilesystemEscaper
 {
     /**

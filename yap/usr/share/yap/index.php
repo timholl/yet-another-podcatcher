@@ -8,6 +8,7 @@ use App\Storage\AlreadyDownloadedHelper;
 use App\Tracklist\Chapter;
 use App\Tracklist\ThousandAndOneTracklists;
 use App\Tracklist\TracklistProviderInterface;
+use App\Util\CommandExecutor;
 use App\Util\FfMetadata;
 use App\Util\FilesystemEscaper;
 use App\Util\Logger;
@@ -168,12 +169,11 @@ foreach($config->getSubscriptions() as $subscription) {
          */
         $imageUrl = null;
         if (null !== $item->getImageUrl()) {
-            // Use the episode-specific image url
-            $imageUrl = $item->getImageUrl();
+            $imageUrl = $item->getImageUrl(); // Use the episode-specific image url
         } else if (null !== $feed->getImageUrl()) {
-            // Use the channel general image url
-            $imageUrl = $feed->getImageUrl();
+            $imageUrl = $feed->getImageUrl(); // Use the channel general image url
         }
+
         if ($imageUrl) {
             Logger::info(sprintf(
                 "Downloading cover art file '%s' ...",
@@ -181,7 +181,7 @@ foreach($config->getSubscriptions() as $subscription) {
             ));
 
             $ret = file_put_contents("./cover", fopen($imageUrl, 'r'));
-            if (false === $ret) {
+            if (false === $ret || !file_exists("./cover")) {
                 throw new RuntimeException("Cover art download failed.");
             }
 
@@ -191,16 +191,16 @@ foreach($config->getSubscriptions() as $subscription) {
             ));
 
             // Convert to PNG
-            exec("convert ./cover ./cover.png");
+            if (false === CommandExecutor::execute("convert ./cover ./cover.png")) {
+                throw new RuntimeException("Cover art file conversion failed.");
+            }
 
             // Delete original
-            exec("rm ./cover");
-
-            if (file_exists("./cover.png")) {
-                Logger::info("Converted cover art file to PNG.");
-            } else {
-                Logger::info("Warning: Conversion of cover art file to PNG apparently failed. Proceeding without.");
+            if (false === CommandExecutor::execute("rm ./cover")) {
+                throw new RuntimeException("Unable to remove original cover art file.");
             }
+
+            Logger::info("Successfully converted cover art to PNG.");
         }
 
         /*
@@ -226,14 +226,16 @@ foreach($config->getSubscriptions() as $subscription) {
         // Post-Processing
 
         /*
-         * Convert the provided "./audio" file to Matroska audio (MKA)
+         * Embed the provided "./audio" file into Matroska audio (MKA) container.
          *
          * - Keep the original audio codec
          * - Drop any potential video streams
          * - Do not drop any metadata, nor chapters
          * - Force matroska container output format
          */
-        exec("ffmpeg -i ./audio -c:a copy -vn -f matroska ./audio2");
+        if (false === CommandExecutor::execute("ffmpeg -i ./audio -c:a copy -vn -f matroska ./audio2")) {
+            throw new RuntimeException("Failed to embed enclosure file into MKA container.");
+        }
 
         // Check result
         if (!file_exists("./audio2")) {
@@ -243,7 +245,9 @@ foreach($config->getSubscriptions() as $subscription) {
         Logger::info("Conversion step successful.");
 
         // Clean up
-        exec("rm ./audio && mv ./audio2 ./audio");
+        if (false === CommandExecutor::execute("rm ./audio && mv ./audio2 ./audio")) {
+            throw new RuntimeException("Error during post-conversion.");
+        }
 
         /**
          * Check if chapters present and external merge is enabled.
@@ -326,7 +330,9 @@ foreach($config->getSubscriptions() as $subscription) {
         file_put_contents("./metadata.txt", FfMetadata::generate($item, $feed, $chapters));
 
         // Add to file
-        exec("ffmpeg -i ./audio -i metadata.txt -codec copy -vn -map_metadata 1 -f matroska ./audio2");
+        if (false === CommandExecutor::execute("ffmpeg -i ./audio -i metadata.txt -codec copy -vn -map_metadata 1 -f matroska ./audio2")) {
+            throw new RuntimeException("Unable to add metadata.");
+        }
 
         // Check result
         if (!file_exists("./audio2")) {
@@ -336,7 +342,9 @@ foreach($config->getSubscriptions() as $subscription) {
         Logger::info("Metadata merge successful");
 
         // Clean up
-        exec("rm ./audio && mv ./audio2 ./audio");
+        if (false === CommandExecutor::execute("rm ./audio && mv ./audio2 ./audio")) {
+            throw new RuntimeException("Error during cleanup");
+        }
 
         /*
          * Attach potential cover art
@@ -344,7 +352,9 @@ foreach($config->getSubscriptions() as $subscription) {
         if (file_exists("./cover.png")) {
             Logger::info("Cover art file present, starting merge.");
 
-            exec("ffmpeg -i ./audio -codec copy -vn -map_metadata 0 -f matroska -attach cover.png -metadata:s:t mimetype=image/png ./audio2");
+            if (false === CommandExecutor::execute("ffmpeg -i ./audio -codec copy -vn -map_metadata 0 -f matroska -attach cover.png -metadata:s:t mimetype=image/png ./audio2")) {
+                throw new RuntimeException("Error during attaching cover art.");
+            }
 
             // Check result
             if (!file_exists("./audio2")) {
@@ -353,7 +363,9 @@ foreach($config->getSubscriptions() as $subscription) {
 
             Logger::info("Cover art file merge successful.");
 
-            exec("rm ./audio && mv ./audio2 ./audio");
+            if (false === CommandExecutor::execute("rm ./audio && mv ./audio2 ./audio")) {
+                throw new RuntimeException("Error during cleanup");
+            }
         }
 
         /*
@@ -413,10 +425,12 @@ foreach($config->getSubscriptions() as $subscription) {
         ;
 
         // We use `cp` and `rm` instead of `mv` in order to prevent warnings concerning permissions when copying across filesystem borders.
-        exec(sprintf("cp --no-preserve=ownership ./audio %s && rm ./audio", escapeshellarg($destination)));
+        if (false === CommandExecutor::execute(sprintf("cp --no-preserve=ownership ./audio %s && rm ./audio", escapeshellarg($destination)))) {
+            throw new RuntimeException("Unable to move asset file to destination.");
+        }
 
         Logger::info(sprintf(
-            "Moved asset file to destination '%s'.",
+            "Copied asset file to destination '%s'.",
             $destination
         ));
 
@@ -427,10 +441,12 @@ foreach($config->getSubscriptions() as $subscription) {
             $destination = $episodeDirectory . DIRECTORY_SEPARATOR . "cover.png";
 
             // We use `cp` and `rm` instead of `mv` in order to prevent warnings concerning permissions when copying across filesystem borders.
-            exec(sprintf("cp --no-preserve=ownership ./cover.png %s", escapeshellarg($destination)));
+            if (false === CommandExecutor::execute(sprintf("cp --no-preserve=ownership ./cover.png %s", escapeshellarg($destination)))) {
+                throw new RuntimeException("Unable to copy cover art file to destination.");
+            }
 
             Logger::info(sprintf(
-                "Moved cover art file to destination '%s'.",
+                "Copied cover art file to destination '%s'.",
                 $destination
             ));
         }
