@@ -433,7 +433,7 @@ foreach($config->getSubscriptions() as $subscription) {
             . FilesystemEscaper::escapeNameForFilesystem($feed->getTitle() . " – " . $item->getTitle() . ".mka")
         ;
 
-        // We use `cp` and `rm` instead of `mv` in order to prevent warnings concerning permissions when copying across filesystem borders.
+        // The '--no-preserve=ownership' is sometimes required for moving files across filesystems borders
         if (false === CommandExecutor::execute(sprintf("cp --no-preserve=ownership ./audio %s && rm ./audio", escapeshellarg($destination)))) {
             throw new RuntimeException("Unable to move asset file to destination.");
         }
@@ -449,7 +449,7 @@ foreach($config->getSubscriptions() as $subscription) {
         if (file_exists("./cover.png")) {
             $destination = $episodeDirectory . DIRECTORY_SEPARATOR . "cover.png";
 
-            // We use `cp` and `rm` instead of `mv` in order to prevent warnings concerning permissions when copying across filesystem borders.
+            // The '--no-preserve=ownership' is sometimes required for moving files across filesystems borders
             if (false === CommandExecutor::execute(sprintf("cp --no-preserve=ownership ./cover.png %s", escapeshellarg($destination)))) {
                 throw new RuntimeException("Unable to copy cover art file to destination.");
             }
