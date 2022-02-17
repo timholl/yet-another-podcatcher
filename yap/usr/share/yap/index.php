@@ -190,7 +190,7 @@ foreach($config->getSubscriptions() as $subscription) {
             ));
 
             $ret = file_put_contents("./cover", fopen($imageUrl, 'r'));
-            if (false === $ret || !file_exists("./cover")) {
+            if (false === $ret || 0 === $ret || !file_exists("./cover")) {
                 throw new RuntimeException("Cover art download failed.");
             }
 
@@ -221,7 +221,7 @@ foreach($config->getSubscriptions() as $subscription) {
         ));
 
         $ret = file_put_contents("./audio", fopen($item->getEnclosureUrl(), 'r'));
-        if (false === $ret) {
+        if (false === $ret || 0 === $ret || !file_exists("./audio")) {
             throw new RuntimeException("Enclosure file download failed.");
         }
 
