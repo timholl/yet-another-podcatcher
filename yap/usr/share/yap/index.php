@@ -458,7 +458,7 @@ foreach($config->getSubscriptions() as $subscription) {
 
             M3uPlaylistManager::addItemIfNotExists(
                 $config->getLibraryDirectory(),
-                FilesystemEscaper::escapeNameForFilesystem($feed->getTitle() . ".mka"),
+                FilesystemEscaper::escapeNameForFilesystem($feed->getTitle() . ".m3u"),
                 $relativeDestination
             );
 
