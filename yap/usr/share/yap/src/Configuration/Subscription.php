@@ -58,12 +58,22 @@ final class Subscription
      */
     private $recent;
 
+    /**
+     * Optional: Add newly downloaded items to M3U playlist.
+     *
+     * Defaults to false.
+     *
+     * @var bool
+     */
+    private $createPlaylist;
+
     public function __construct(
         string $title,
         string $feedUrl,
         bool $externalTracklistMergeEnabled,
         bool $externalTracklistMergeCritical,
         bool $enabled,
+        bool $createPlaylist,
         ?int $recent = null
     ) {
         $this->title = $title;
@@ -71,6 +81,7 @@ final class Subscription
         $this->externalTracklistMergeEnabled = $externalTracklistMergeEnabled;
         $this->externalTracklistMergeCritical = $externalTracklistMergeCritical;
         $this->enabled = $enabled;
+        $this->createPlaylist = $createPlaylist;
         $this->recent = $recent;
     }
 
@@ -102,5 +113,10 @@ final class Subscription
     public function getRecent(): ?int
     {
         return $this->recent;
+    }
+
+    public function isCreatePlaylist(): bool
+    {
+        return $this->createPlaylist;
     }
 }

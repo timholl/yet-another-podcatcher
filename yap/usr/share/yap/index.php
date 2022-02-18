@@ -12,6 +12,7 @@ use App\Util\CommandExecutor;
 use App\Util\FfMetadata;
 use App\Util\FilesystemEscaper;
 use App\Util\Logger;
+use App\Util\M3uPlaylistManager;
 use App\Util\TempDir;
 use RuntimeException;
 
@@ -442,6 +443,26 @@ foreach($config->getSubscriptions() as $subscription) {
             "Copied asset file to destination '%s'.",
             $destination
         ));
+
+        /*
+         * Add asset file to playlist
+         */
+        if ($subscription->isCreatePlaylist()) {
+
+            // Cut off the library base directory from the asset file path to get a relative path.
+            $relativeDestination = str_replace(
+                $config->getLibraryDirectory() . DIRECTORY_SEPARATOR,
+                '',
+                $destination
+            );
+
+            M3uPlaylistManager::addItemIfNotExists(
+                $config->getLibraryDirectory(),
+                FilesystemEscaper::escapeNameForFilesystem($feed->getTitle() . ".mka"),
+                $relativeDestination
+            );
+
+        }
 
         /*
          * Move cover file to destination (if exists)

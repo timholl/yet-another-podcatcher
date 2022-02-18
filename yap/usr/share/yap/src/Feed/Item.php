@@ -36,6 +36,7 @@ final class Item
 
     /**
      * Size of enclosure file in bytes
+     * This is the claimed size extracted from the feed, is it not guaranteed to be correct.
      *
      * Required:
      * | General | iTunes |

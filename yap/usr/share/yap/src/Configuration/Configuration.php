@@ -125,12 +125,21 @@ final class Configuration
                 $enabled = (boolean) $subscription['enabled'];
             }
 
+            /*
+             * Optional attribute 'createPlaylist'
+             */
+            $createPlaylist = false;
+            if (isset($subscription['createPlaylist'])) {
+                $createPlaylist = (boolean) $subscription['createPlaylist'];
+            }
+
             $subscriptions[] = new Subscription(
                 $title,
                 $feedUrl,
                 $externalTracklist,
                 $externalTracklistMergeCritical,
                 $enabled,
+                $createPlaylist,
                 $recent
             );
         }
