@@ -38,7 +38,7 @@ final class M3uPlaylistManager
         }
 
         // Add item
-        file_put_contents($playlistFullPath, $itemRelativePath, FILE_APPEND);
+        file_put_contents($playlistFullPath . PHP_EOL, $itemRelativePath, FILE_APPEND);
     }
 
     private static function containsLine(string $playlistFullPath, string $itemRelativePath): bool
