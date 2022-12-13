@@ -97,7 +97,7 @@ final class ThousandAndOneTracklists implements TracklistProviderInterface
         Logger::info(sprintf(
             "Performing search operation for query string '%s'",
             $queryString
-        ));
+        ), Logger::VERBOSITY_VERBOSE);
 
         $post_args = [
             "main_search" => $queryString,
@@ -114,7 +114,7 @@ final class ThousandAndOneTracklists implements TracklistProviderInterface
         libxml_use_internal_errors(true);
         $ret = $doc->loadHTML($html);
         if (null === $ret || false === $ret) {
-            Logger::info("Parsing the returned query HTML failed.");
+            Logger::info("Parsing the returned query HTML failed.", Logger::VERBOSITY_NORMAL);
 
             return null;
         }
@@ -123,14 +123,15 @@ final class ThousandAndOneTracklists implements TracklistProviderInterface
         $linkList = $xpath->query("//div[@id='middle']/div[contains(@class, 'oItm')]/div[contains(@class, 'bCont')]/div[contains(@class, 'bTitle')]/a/@href");
 
         if (0 === $linkList->count()) {
-            Logger::info("Did not find a single search result.");
+            Logger::info("Did not find a single search result.", Logger::VERBOSITY_NORMAL);
 
             return null;
         }
 
         Logger::info(sprintf(
             "Found %d search results",
-            $linkList->count())
+            $linkList->count()),
+            Logger::VERBOSITY_VERBOSE
         );
 
         // Element 0 exists.
@@ -141,7 +142,7 @@ final class ThousandAndOneTracklists implements TracklistProviderInterface
             "Found tracklist link '%s', appended to absolute link '%s'.",
             $relativeLink,
             $absoluteLink
-        ));
+        ), Logger::VERBOSITY_VERBOSE);
 
         return $absoluteLink;
     }
@@ -156,7 +157,7 @@ final class ThousandAndOneTracklists implements TracklistProviderInterface
             Logger::info(sprintf(
                 "Error requesting the tracklist URL '%s'.",
                 $tracklistUrl
-            ));
+            ), Logger::VERBOSITY_NORMAL);
 
             throw new RuntimeException("Error requesting the tracklist URL.");
         }
@@ -169,7 +170,7 @@ final class ThousandAndOneTracklists implements TracklistProviderInterface
             Logger::info(sprintf(
                 "Error parsing the returned HTML from URL '%s'.",
                 $tracklistUrl
-            ));
+            ), Logger::VERBOSITY_NORMAL);
 
             throw new RuntimeException("Error parsing the returned tracklist HTML.");
         }
@@ -184,7 +185,7 @@ final class ThousandAndOneTracklists implements TracklistProviderInterface
         Logger::info(sprintf(
             "Found %d items in tracklist.",
             $tlItems->count()
-        ));
+        ), Logger::VERBOSITY_VERBOSE);
 
         foreach($tlItems as $tlItem) {
 

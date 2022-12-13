@@ -15,7 +15,9 @@ use RuntimeException;
 
 require __DIR__ . '/vendor/autoload.php';
 
-Logger::info("Startup");
+Logger::setMaxVerbosity(Logger::VERBOSITY_NORMAL);
+
+Logger::info("Startup", Logger::VERBOSITY_VERBOSE);
 
 /*
  * Load the configuration
@@ -26,7 +28,7 @@ if (null === $config) {
     throw new RuntimeException("Error while loading configuration. Exiting.");
 }
 
-Logger::info("Loaded configuration");
+Logger::info("Loaded configuration", Logger::VERBOSITY_VERBOSE);
 
 // Tell libxml to use internal errors
 libxml_use_internal_errors(true);
@@ -46,19 +48,19 @@ foreach($config->getSubscriptions() as $subscription) {
         "Processing feed '%s' (%s) ...",
         $subscription->getTitle(),
         $subscription->getFeedUrl()
-    ));
+    ), Logger::VERBOSITY_VERBOSE);
 
     // Perform query
     $contents = file_get_contents($subscription->getFeedUrl());
     if (false === $contents) {
-        Logger::info("Error getting the feed! Skipping.");
+        Logger::info("Error getting the feed! Skipping.", Logger::VERBOSITY_NORMAL);
         continue;
     }
 
     // Parse as XML
     $xml = simplexml_load_string($contents);
     if (false === $xml) {
-        Logger::info("Error parsing the feeds content! Skipping.");
+        Logger::info("Error parsing the feeds content! Skipping.", Logger::VERBOSITY_NORMAL);
         continue;
     }
 
@@ -69,7 +71,7 @@ foreach($config->getSubscriptions() as $subscription) {
         "Loaded feed '%s'. Currently %d entries found.",
         $feed->getTitle(),
         count($feed->getItems())
-    ));
+    ), Logger::VERBOSITY_VERBOSE);
 
     /*
      * Print warning if the feed maintainer advertises a new feed URL, and this is not the currently used one.
@@ -79,7 +81,7 @@ foreach($config->getSubscriptions() as $subscription) {
             'IMPORTANT: Unhandled feed URL change detected. "%s" -> "%s".',
             $subscription->getFeedUrl(),
             $feed->getNewFeedUrl()
-        ));
+        ), Logger::VERBOSITY_NORMAL);
     }
 
     /*
@@ -88,7 +90,7 @@ foreach($config->getSubscriptions() as $subscription) {
     if (true === $feed->getCompleted()) {
         Logger::info(sprintf(
             'IMPORTANT: Feed is marked as "completed", so no further episodes will be published.'
-        ));
+        ), Logger::VERBOSITY_VERBOSE);
     }
 
     /*
@@ -105,14 +107,14 @@ foreach($config->getSubscriptions() as $subscription) {
         Logger::info(sprintf(
             "Processing item '%s'",
             $item->getTitle()
-        ));
+        ), Logger::VERBOSITY_VERBOSE);
 
         // Skip episode if already downloaded
         if (AlreadyDownloadedHelper::alreadyDownloaded($config, $item->getEnclosureUrl())) {
             Logger::info(sprintf(
                 "Already downloaded episode '%s'. Skipping.",
                 $item->getTitle()
-            ));
+            ), Logger::VERBOSITY_VERBOSE);
 
             // Continue with the next item of feed.
             continue;
@@ -133,7 +135,7 @@ foreach($config->getSubscriptions() as $subscription) {
             Logger::info(sprintf(
                 "Marked URL %s as downloaded (skipped due to not recent).",
                 $item->getEnclosureUrl()
-            ));
+            ), Logger::VERBOSITY_NORMAL);
 
             // Continue with the next item of feed.
             continue;
@@ -142,7 +144,7 @@ foreach($config->getSubscriptions() as $subscription) {
         Logger::info(sprintf(
             "Starting download of new episode '%s' ...",
             $item->getTitle()
-        ));
+        ), Logger::VERBOSITY_VERBOSE);
 
         // Generate download identifier
         $hash = substr(md5(time() . rand()), 0, 8);
@@ -156,7 +158,7 @@ foreach($config->getSubscriptions() as $subscription) {
         // Switch into
         chdir($workingDir);
 
-        Logger::info(sprintf("Using temporary working directory %s.", $workingDir));
+        Logger::info(sprintf("Using temporary working directory %s.", $workingDir), Logger::VERBOSITY_VERBOSE);
 
         /*
          * Cover art
@@ -173,7 +175,7 @@ foreach($config->getSubscriptions() as $subscription) {
             Logger::info(sprintf(
                 "Downloading cover art file '%s' ...",
                 $imageUrl
-            ));
+            ), Logger::VERBOSITY_VERBOSE);
 
             $ret = file_put_contents("./cover", fopen($imageUrl, 'r'));
             if (false === $ret) {
@@ -183,7 +185,7 @@ foreach($config->getSubscriptions() as $subscription) {
             Logger::info(sprintf(
                 "Successfully downloaded %d bytes of cover art.",
                 $ret
-            ));
+            ), Logger::VERBOSITY_VERBOSE);
 
             // Convert to PNG
             exec("convert ./cover ./cover.png");
@@ -192,9 +194,9 @@ foreach($config->getSubscriptions() as $subscription) {
             exec("rm ./cover");
 
             if (file_exists("./cover.png")) {
-                Logger::info("Converted cover art file to PNG.");
+                Logger::info("Converted cover art file to PNG.", Logger::VERBOSITY_VERBOSE);
             } else {
-                Logger::info("Warning: Conversion of cover art file to PNG apparently failed. Proceeding without.");
+                Logger::info("Warning: Conversion of cover art file to PNG apparently failed. Proceeding without.", Logger::VERBOSITY_NORMAL);
             }
         }
 
@@ -204,7 +206,7 @@ foreach($config->getSubscriptions() as $subscription) {
         Logger::info(sprintf(
             "Downloading enclosure file '%s' ...",
             $item->getEnclosureUrl()
-        ));
+        ), Logger::VERBOSITY_VERBOSE);
 
         $ret = file_put_contents("./audio", fopen($item->getEnclosureUrl(), 'r'));
         if (false === $ret) {
@@ -214,7 +216,7 @@ foreach($config->getSubscriptions() as $subscription) {
         Logger::info(sprintf(
             "Successfully downloaded %d bytes.",
             $ret
-        ));
+        ), Logger::VERBOSITY_VERBOSE);
 
         assert(file_exists("./audio")); // Must be true if download did not fail.
 
@@ -235,7 +237,7 @@ foreach($config->getSubscriptions() as $subscription) {
             throw new RuntimeException("Conversion step failed.");
         }
 
-        Logger::info("Conversion step successful.");
+        Logger::info("Conversion step successful.", Logger::VERBOSITY_VERBOSE);
 
         // Clean up
         exec("rm ./audio && mv ./audio2 ./audio");
@@ -247,11 +249,11 @@ foreach($config->getSubscriptions() as $subscription) {
          */
         $chapters = [];
         if ($subscription->isExternalTracklistMergeEnabled()) {
-            Logger::info("External tracklist merge is enabled for the current subscription.");
+            Logger::info("External tracklist merge is enabled for the current subscription.", Logger::VERBOSITY_VERBOSE);
 
             // Check for chapter presence
             if (!hasChapters()) {
-                Logger::info("No chapters were found in the downloaded asset file. Going to retrieve external tracklist.");
+                Logger::info("No chapters were found in the downloaded asset file. Going to retrieve external tracklist.", Logger::VERBOSITY_VERBOSE);
 
                 // The string to search for.
                 $queryString = $feed->getTitle() . " " . $item->getTitle();
@@ -275,7 +277,7 @@ foreach($config->getSubscriptions() as $subscription) {
                     Logger::info(sprintf(
                         "Found tracklist with URL '%s'.",
                         $tracklistUrl
-                    ));
+                    ), Logger::VERBOSITY_VERBOSE);
 
                     // Let the tracklist provider extract the chapters
                     $chapters = $tracklistProvider->get($tracklistUrl);
@@ -284,7 +286,7 @@ foreach($config->getSubscriptions() as $subscription) {
                     Logger::info(sprintf(
                         "Could not find a tracklist for the provided query string '%s'. Going to fail hard.",
                         $queryString
-                    ));
+                    ), Logger::VERBOSITY_NORMAL);
 
                     throw new RuntimeException(
                         "Error searching or extracting the tracklist. Maybe we got blacklisted?"
@@ -292,7 +294,7 @@ foreach($config->getSubscriptions() as $subscription) {
                 }
 
             } else {
-                Logger::info("The downloaded file apparently has a sufficient amount of chapters. Skipping merge.");
+                Logger::info("The downloaded file apparently has a sufficient amount of chapters. Skipping merge.", Logger::VERBOSITY_VERBOSE);
             }
         }
 
@@ -311,7 +313,7 @@ foreach($config->getSubscriptions() as $subscription) {
             throw new RuntimeException("Metadata merge failed.");
         }
 
-        Logger::info("Metadata merge successful");
+        Logger::info("Metadata merge successful", Logger::VERBOSITY_VERBOSE);
 
         // Clean up
         exec("rm ./audio && mv ./audio2 ./audio");
@@ -320,7 +322,7 @@ foreach($config->getSubscriptions() as $subscription) {
          * Attach potential cover art
          */
         if (file_exists("./cover.png")) {
-            Logger::info("Cover art file present, starting merge.");
+            Logger::info("Cover art file present, starting merge.", Logger::VERBOSITY_VERBOSE);
 
             exec("ffmpeg -i ./audio -codec copy -vn -map_metadata 0 -f matroska -attach cover.png -metadata:s:t mimetype=image/png ./audio2");
 
@@ -329,7 +331,7 @@ foreach($config->getSubscriptions() as $subscription) {
                 throw new RuntimeException("Merge of cover art failed.");
             }
 
-            Logger::info("Cover art file merge successful.");
+            Logger::info("Cover art file merge successful.", Logger::VERBOSITY_VERBOSE);
 
             exec("rm ./audio && mv ./audio2 ./audio");
         }
@@ -344,7 +346,7 @@ foreach($config->getSubscriptions() as $subscription) {
             Logger::info(sprintf(
                 "Output directory '%s' does not exist yet, going to create.",
                 $destinationDirectory
-            ));
+            ), Logger::VERBOSITY_VERBOSE);
 
             if (false === mkdir($destinationDirectory)) {
                 throw new RuntimeException("Could not create output directory!");
@@ -359,7 +361,7 @@ foreach($config->getSubscriptions() as $subscription) {
         Logger::info(sprintf(
             "Moved file to destination '%s' ...",
             $destination
-        ));
+        ), Logger::VERBOSITY_VERBOSE);
 
         // Clean up temporary directory
         TempDir::removeTempDir($workingDir);
@@ -370,12 +372,12 @@ foreach($config->getSubscriptions() as $subscription) {
         Logger::info(sprintf(
             "Marked URL %s as downloaded.",
             $item->getEnclosureUrl()
-        ));
+        ), Logger::VERBOSITY_VERBOSE);
 
         Logger::info(sprintf(
-            "Finished processing of episode %s.",
+            "Finished processing of new episode %s.",
             $item->getTitle()
-        ));
+        ), Logger::VERBOSITY_NORMAL);
 
         // sleep(3);
     }
@@ -383,10 +385,10 @@ foreach($config->getSubscriptions() as $subscription) {
     Logger::info(sprintf(
         "Finished processing items from subscription '%s'.",
         $feed->getTitle()
-    ));
+    ), Logger::VERBOSITY_VERBOSE);
 }
 
-Logger::info("Finished processing all subscriptions. Exiting.");
+Logger::info("Finished processing all subscriptions. Exiting.", Logger::VERBOSITY_VERBOSE);
 
 /**
  * Returns true iff the file "./audio" has a reasonable amount of chapters (>= 2) set.
